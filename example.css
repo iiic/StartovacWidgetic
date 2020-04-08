@@ -1,0 +1,68 @@
+#startovac-canvas {
+	text-align: center;
+	font-family: SourceSansPro, arial, sans-serif;
+	background: #4b4b4b;
+	color: #e0e0e0;
+	padding: 1rem;
+	max-width: 300px;
+}
+
+#startovac-canvas a,
+#startovac-canvas a:active,
+#startovac-canvas a:focus,
+#startovac-canvas a:visited {
+	color: #0dcf00
+}
+
+#startovac-canvas img {
+	border: 0.4em solid #fff;
+}
+
+#startovac-canvas a strong {
+	color: #0dcf00;
+}
+
+#startovac-canvas meter {
+	width: 100%;
+	height: 1.5em;
+	outline: 1px solid #e0e0e0;
+}
+
+#startovac-canvas meter::-webkit-meter-optimum-value,
+#startovac-canvas meter::-webkit-meter-suboptimum-value,
+#startovac-canvas meter::-webkit-meter-even-less-good-value {
+	background: #0dcf00;
+	background-image: linear-gradient(135deg, rgba(255, 255, 255, .3) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .3) 50%, rgba(255, 255, 255, .3) 75%, transparent 75%, transparent);
+	background-size: 3em 3em;
+}
+
+#startovac-canvas meter:-moz-meter-optimum::-moz-meter-bar,
+#startovac-canvas meter:-moz-meter-sub-optimum::-moz-meter-bar,
+#startovac-canvas meter:-moz-meter-sub-sub-optimum::-moz-meter-bar {
+	background: #0dcf00;
+	background-image: linear-gradient(135deg, rgba(255, 255, 255, .3) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .3) 50%, rgba(255, 255, 255, .3) 75%, transparent 75%, transparent);
+	background-size: 3em 3em;
+}
+
+#startovac-canvas a[rel="sponsored"] {
+	display: block;
+	background: #15de00;
+	font-size: 1.25em;
+	border-radius: 1em;
+	background: linear-gradient(to bottom, #03c100 0%, #27fb00 100%);
+	color: white;
+	font-weight: bold;
+	text-transform: uppercase;
+	text-decoration: none;
+	text-shadow: 1px 1px 1px rgba(16, 18, 17, 0.2);
+	box-shadow: 0 1px 1px 0 rgba(16, 18, 17, 0.2);
+	vertical-align: middle;
+	text-align: center;
+	overflow: hidden;
+	margin: 0 2em;
+	padding: 0.4em 1em 0.3em 1em;
+}
+
+#startovac-canvas a[rel="sponsored"]:hover {
+	box-shadow: 0 1px 2px 2px rgba(99, 99, 99, 0.5);
+}

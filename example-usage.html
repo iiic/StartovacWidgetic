@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>StartovacWidgetic html example</title>
+	<link rel="stylesheet" href="example.css" crossorigin="anonymous" integrity="sha256-43E2IZzOhhnIrQu7Bg+QVxKVHxZJvnjzyK7riLGoEcM=">
+</head>
+
+<body>
+	<!-- <script src="https://www.startovac.cz/js/startovac_elements.js" integrity="sha256-74NIY+W7Z6I+LorE7yRX77KW60wl1ADSPRzLJZSjnW8=" crossorigin="anonymous"></script>
+	<div id="div-startovacElement-1"></div>
+	<script>
+		startovacGrayIFrame( 'https://www.startovac.cz/patron/fsfilm/', 380, 250 );
+	</script> -->
+
+	<div id="startovac-canvas" hidden></div>
+	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-eRG0Ii75Q7xFuQ7BpfTGrQGNud5R39jxK6R9ini0OtA="></script>
+	<script type="module">
+		import { StartovacWidgetic } from '/startovacWidgetic.mjs';
+		const projectURL = new URL( 'https://www.startovac.cz/patron/vedator/' );
+		const config = {
+			structure: [
+				'picture',
+				'br',
+				'title',
+				'br',
+				'br',
+				'meter',
+				'percentText',
+				'countdownText',
+				'supportLink',
+				'moneyCollected',
+				'nSupporters',
+			]
+		};
+		new StartovacWidgetic( projectURL, null, config );
+	</script>
