@@ -6,7 +6,7 @@
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.1
+* @version 0.2
 * @readonly
 */
 const StartovacWidgeticPrivate = class
@@ -296,11 +296,9 @@ const StartovacWidgeticPrivate = class
 				if ( el ) {
 					const container = document.createElement( el );
 					const span = document.createElement( 'SPAN' );
-					span.appendChild( document.createTextNode(
-						this.startovacData.pledged ? this.startovacData.pledged : '0'
-							+ ' '
-							+ this.startovacData.currency_symbol )
-					);
+					let textContent = this.startovacData.pledged ? this.startovacData.pledged : '0';
+					textContent += ' ' + this.startovacData.currency_symbol;
+					span.appendChild( document.createTextNode( textContent ) );
 					container.appendChild( span );
 					container.appendChild( document.createTextNode( this.settings.texts.pledged ) );
 					this.rootElement.appendChild( container );
@@ -343,7 +341,7 @@ const StartovacWidgeticPrivate = class
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.1
+* @version 0.2
 */
 export class StartovacWidgetic
 {
