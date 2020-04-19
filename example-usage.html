@@ -15,7 +15,7 @@
 	</script> -->
 
 	<div id="startovac-canvas" hidden></div>
-	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-ng0HegCflgf0sYa5O67/hhLwDjQQElensQVtKt4zIbM="></script>
+	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-S2uum/79mzg8OUYejkEsGIoe4mfsWQb0Ab1qD+I4tYw="></script>
 	<script type="module">
 		import { StartovacWidgetic } from '/startovacWidgetic.mjs';
 		const projectURL = new URL( 'https://www.startovac.cz/patron/vedator/' );
@@ -32,7 +32,10 @@
 				'supportLink',
 				'moneyCollected',
 				'nSupporters',
-			]
+			],
+			texts: {
+				support: '\u{1f431}přispět\u{1f431}',
+			},
 		};
 		new StartovacWidgetic( projectURL, null, config );
 	</script>

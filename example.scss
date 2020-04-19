@@ -1,0 +1,76 @@
+#startovac-canvas {
+	$bg: #4b4b4b;
+	$base-text-color: #e0e0e0;
+	$brand-primary: #0dcf00;
+	$img-border-color: #fff;
+	$gradient: linear-gradient(135deg, rgba(255, 255, 255, .3) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .3) 50%, rgba(255, 255, 255, .3) 75%, transparent 75%, transparent);
+
+	text-align: center;
+	font-family: SourceSansPro, arial, sans-serif;
+	background: $bg;
+	color: $base-text-color;
+	padding: 1rem;
+	max-width: 360px;
+
+	a,
+	a:active,
+	a:focus,
+	a:visited {
+		color: $brand-primary;
+	}
+
+	img {
+		border: 0.4em solid $img-border-color;
+	}
+
+	a strong {
+		color: $brand-primary;
+	}
+
+	meter {
+		width: 100%;
+		height: 1.5em;
+		outline: 1px solid $base-text-color;
+	}
+
+	meter::-webkit-meter-optimum-value,
+	meter::-webkit-meter-suboptimum-value,
+	meter::-webkit-meter-even-less-good-value {
+		background: $brand-primary;
+		background-image: $gradient;
+		background-size: 3em 3em;
+	}
+
+	meter:-moz-meter-optimum::-moz-meter-bar,
+	meter:-moz-meter-sub-optimum::-moz-meter-bar,
+	meter:-moz-meter-sub-sub-optimum::-moz-meter-bar {
+		background: $brand-primary;
+		background-image: $gradient;
+		background-size: 3em 3em;
+	}
+
+	a[rel="sponsored"] {
+		display: block;
+		background: $brand-primary;
+		font-size: 1.25em;
+		border-radius: 1em;
+		background: linear-gradient(to bottom, #03c100 0%, #27fb00 100%);
+		color: $img-border-color;
+		font-weight: bold;
+		text-transform: uppercase;
+		text-decoration: none;
+		text-shadow: 1px 1px 1px rgba(16, 18, 17, 0.2);
+		box-shadow: 0 1px 1px 0 rgba(16, 18, 17, 0.2);
+		vertical-align: middle;
+		text-align: center;
+		overflow: hidden;
+		margin: 0 2em;
+		padding: 0.4em 1em 0.3em 1em;
+		white-space: nowrap;
+
+		&:hover {
+			box-shadow: 0 1px 2px 2px rgba(99, 99, 99, 0.5);
+		}
+	}
+
+}

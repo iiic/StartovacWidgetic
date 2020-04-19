@@ -6,7 +6,7 @@
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.2
+* @version 0.3
 * @readonly
 */
 const StartovacWidgeticPrivate = class
@@ -64,6 +64,7 @@ const StartovacWidgeticPrivate = class
 			backersPlural: ' Startérů',
 			//patronsPlural: ' patronů', // @todo
 		},
+		modulesImportPath: 'https://iiic.dev/js/modules',
 		autoRun: true,
 	};
 
@@ -341,14 +342,14 @@ const StartovacWidgeticPrivate = class
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.2
+* @version 0.3
 */
 export class StartovacWidgetic
 {
 
 	/**
 	 * @private
-	 * @description #private is not currently supported by Firefox
+	 * @description '#private' is not currently supported by Firefox, so that's why '_private'
 	 */
 	_private;
 
@@ -394,7 +395,19 @@ export class StartovacWidgetic
 
 	set settings ( /** @type {Object} */ inObject )
 	{
-		Object.assign( this._private.settings, inObject );
+		if ( inObject.modulesImportPath ) {
+			this.settings.modulesImportPath = inObject.modulesImportPath;
+		}
+		// @ts-ignore
+		import( this.settings.modulesImportPath + '/object/deepAssign.mjs' ).then( ( /** @type {Module} */ deepAssign ) =>
+		{
+			new deepAssign.append( Object );
+			// @ts-ignore
+			this._private.settings = Object.deepAssign( this.settings, inObject ); // multi level assign
+		} ).catch( () =>
+		{
+			Object.assign( this._private.settings, inObject ); // single level assign
+		} );
 	}
 
 	/**
@@ -466,7 +479,7 @@ export class StartovacWidgetic
 	{
 		const BASE_JSON = '/json';
 		const POSSIBLE_FORMS = [ BASE_JSON, 'json/' ];
-		const slug = this.projectURL.href.substr( this.projectURL.href.length - 5 );
+		const slug = this.projectURL.href.substr( this.projectURL.href.length - BASE_JSON.length );
 		if ( !POSSIBLE_FORMS.includes( slug ) ) {
 			this.projectURL.href += BASE_JSON;
 		}
