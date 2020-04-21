@@ -1,4 +1,4 @@
-# StartovacWidgetic v 0.2
+# StartovacWidgetic v 0.3
 Widget pro zobrazení Startovač projektu na vlastním webu
 
 V podstatě obdoba takového okénka od Startovače https://www.startovac.cz/novinky/detail/1222/ jen bez toho iframe, document.write() a dalších nepěkných věcí.
@@ -13,7 +13,7 @@ Potřebný je tu jediný soubor a to `startovacWidgetic.mjs`. Ten vložit do str
 
 ``` html
 	<div id="startovac-canvas" hidden></div>
-	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-ng0HegCflgf0sYa5O67/hhLwDjQQElensQVtKt4zIbM="></script>
+	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-S2uum/79mzg8OUYejkEsGIoe4mfsWQb0Ab1qD+I4tYw="></script>
 	<script type="module">
 		import { StartovacWidgetic } from '/startovacWidgetic.mjs';
 		const projectURL = new URL( 'https://www.startovac.cz/patron/vedator/' ); // váš projekt na Startovači
@@ -21,6 +21,8 @@ Potřebný je tu jediný soubor a to `startovacWidgetic.mjs`. Ten vložit do str
 		new StartovacWidgetic( projectURL, sandboxElement );
 	</script>
 ```
+
+Není celý kód `	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-S2uum/79mzg8OUYejkEsGIoe4mfsWQb0Ab1qD+I4tYw="></script>` zbytečný, fungovalo by to i bez něj. Jops, fungovalo, ale nešlo by bez něj zajistit kontrolu integrity javascriptového modulu. Bezpečnost je důležitá, pokud vás zajímá o bezpečnosti modulů více, čtěte zde: https://iiic.dev/subresource-integrity-check-u-javascriptovych-modulu
 
 minimalistický příklad použití s nastavením je v souboru `example-usage.html` a příklad jak by mohly vypadat styly v souboru `example.css`.
 
