@@ -6,7 +6,7 @@
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.3
+* @version 0.4
 * @readonly
 */
 const StartovacWidgeticPrivate = class
@@ -64,6 +64,7 @@ const StartovacWidgeticPrivate = class
 			backersPlural: ' Startérů',
 			//patronsPlural: ' patronů', // @todo
 		},
+		clientCacheFor: 15 * 60, // in seconds
 		modulesImportPath: 'https://iiic.dev/js/modules',
 		autoRun: true,
 	};
@@ -342,7 +343,7 @@ const StartovacWidgeticPrivate = class
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.3
+* @version 0.4
 */
 export class StartovacWidgetic
 {
@@ -353,6 +354,14 @@ export class StartovacWidgetic
 	 */
 	_private;
 
+	/**
+	* @public
+	* @description names of cache items stored in localStorage
+	*/
+	cacheNames = {
+		timestamp: 'StartovacWidgetic.cacheTimestamp',
+		data: 'StartovacWidgetic.cachedData',
+	}
 
 	constructor (
 		/** @type {URL | String | null} */ projectURL = null,
@@ -370,10 +379,13 @@ export class StartovacWidgetic
 			this.rootElement = rootElement;
 		}
 		if ( settings ) {
-			this.settings = settings;
-		}
-
-		if ( this.settings.autoRun ) {
+			this.setSettings( settings ).then( () =>
+			{
+				if ( this.settings.autoRun ) {
+					this.run();
+				}
+			} );
+		} else if ( this.settings.autoRun ) {
 			this.run();
 		}
 	}
@@ -391,23 +403,6 @@ export class StartovacWidgetic
 	get rootElement ()
 	{
 		return this._private.rootElement;
-	}
-
-	set settings ( /** @type {Object} */ inObject )
-	{
-		if ( inObject.modulesImportPath ) {
-			this.settings.modulesImportPath = inObject.modulesImportPath;
-		}
-		// @ts-ignore
-		import( this.settings.modulesImportPath + '/object/deepAssign.mjs' ).then( ( /** @type {Module} */ deepAssign ) =>
-		{
-			new deepAssign.append( Object );
-			// @ts-ignore
-			this._private.settings = Object.deepAssign( this.settings, inObject ); // multi level assign
-		} ).catch( () =>
-		{
-			Object.assign( this._private.settings, inObject ); // single level assign
-		} );
 	}
 
 	/**
@@ -456,12 +451,34 @@ export class StartovacWidgetic
 	}
 
 
+	async setSettings ( /** @type {Object} */ inObject )
+	{
+		return new Promise( ( /** @type {Function} */ resolve ) =>
+		{
+			if ( inObject.modulesImportPath ) {
+				this.settings.modulesImportPath = inObject.modulesImportPath;
+			}
+			// @ts-ignore
+			import( this.settings.modulesImportPath + '/object/deepAssign.mjs' ).then( ( /** @type {Module} */ deepAssign ) =>
+			{
+				new deepAssign.append( Object );
+				// @ts-ignore
+				this._private.settings = Object.deepAssign( this.settings, inObject ); // multi level assign
+				resolve( true );
+			} ).catch( () =>
+			{
+				Object.assign( this._private.settings, inObject ); // single level assign
+				resolve( true );
+			} );
+		} );
+	}
+
 	showResult ()
 	{
 		this.rootElement.hidden = false;
 	}
 
-	async prepareVirtualDomFrom ()
+	async prepareVirtualDom ()
 	{
 		return new Promise( ( /** @type {Function} */ resolve ) =>
 		{
@@ -500,11 +517,28 @@ export class StartovacWidgetic
 		}
 	}
 
+	useClientCachedResource ()
+	{
+		if ( this.settings.clientCacheFor && this.settings.clientCacheFor > 0 ) {
+			const cacheTimestamp = localStorage.getItem( this.cacheNames.timestamp );
+			if ( cacheTimestamp && Number( cacheTimestamp ) > Date.now() - this.settings.clientCacheFor * 1000 ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	async fetchFromAPI ()
 	{
 		return new Promise( ( /** @type {Function} */ resolve ) =>
 		{
-			fetch( this.projectURL.href ).then( ( /** @type {Response} */ response ) =>
+			if ( this.useClientCachedResource() ) {
+				this.startovacData = JSON.parse( localStorage.getItem( this.cacheNames.data ) );
+				resolve( true );
+				return true;
+			}
+
+			fetch( this.projectURL.href, { cache: 'no-cache' } ).then( ( /** @type {Response} */ response ) =>
 			{
 				if ( response.ok ) {
 					return response.text();
@@ -513,6 +547,8 @@ export class StartovacWidgetic
 			} ).then( ( /** @type {String} */ json ) =>
 			{
 				this.startovacData = JSON.parse( json );
+				localStorage.setItem( this.cacheNames.timestamp, String( Date.now() ) );
+				localStorage.setItem( this.cacheNames.data, JSON.stringify( this.startovacData ) );
 				resolve( true );
 			} )
 		} );
@@ -525,7 +561,7 @@ export class StartovacWidgetic
 		{
 			this.checkReturnedData();
 			this.determinePatron();
-			this.prepareVirtualDomFrom();
+			this.prepareVirtualDom();
 			this.showResult();
 		} );
 
