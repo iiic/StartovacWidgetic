@@ -4,7 +4,6 @@
 <head>
 	<meta charset="utf-8">
 	<title>StartovacWidgetic html example</title>
-	<link rel="stylesheet" href="/example.css" crossorigin="anonymous" integrity="sha256-43E2IZzOhhnIrQu7Bg+QVxKVHxZJvnjzyK7riLGoEcM=">
 </head>
 
 <body>
@@ -15,27 +14,10 @@
 	</script> -->
 
 	<div id="startovac-canvas" hidden></div>
-	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-q73cHpbcf4e0R62wubmMCMLnjEpumk/09G1aTxFuRxs="></script>
-	<script type="module">
-		import { StartovacWidgetic } from '/startovacWidgetic.mjs';
-		const projectURL = new URL( 'https://www.startovac.cz/patron/vedator/' );
-		const config = {
-			structure: [
-				'picture',
-				'br',
-				'title',
-				'br',
-				'br',
-				'meter',
-				'percentText',
-				'countdownText',
-				'supportLink',
-				'moneyCollected',
-				'nSupporters',
-			],
-			texts: {
-				support: '\u{1f431}přispět\u{1f431}',
-			},
-		};
-		new StartovacWidgetic( projectURL, null, config );
+	<script type="text/json" id="startovac-widgetic-settings">
+		{
+			"projectURL": "https://www.startovac.cz/patron/vedator/",
+			"clientCacheFor": 0
+		}
 	</script>
+	<script type="module" src="/startovacWidgetic.mjs?v=0.5" crossorigin="anonymous" integrity="sha256-gFCc1/meoiIgkAxv5p0W9q4hYLgWxHXBm6kRDg4bbEs="></script>

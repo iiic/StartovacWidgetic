@@ -6,11 +6,21 @@
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.4
+* @version 0.5
 * @readonly
 */
 const StartovacWidgeticPrivate = class
 {
+
+	static TYPE_STRING = 'String';
+	static TYPE_OBJECT = 'Object';
+	static BR_NODE_NAME = 'BR';
+	static SPAN_NODE_NAME = 'SPAN';
+	static LINK_NODE_NAME = 'LINK';
+	static HTML_ANCHOR_ELEMENT = 'A';
+	static IMAGE_NODE_NAME = 'IMG';
+	static PICTURE_NODE_NAME = 'PICTURE';
+	static FIGURE_NODE_NAME = 'FIGURE';
 
 	/**
 	 * @public
@@ -18,6 +28,8 @@ const StartovacWidgeticPrivate = class
 	 * @description default settings… can be overwritten
 	 */
 	settings = {
+		projectURL: 'https://www.startovac.cz/patron/vedator/', // váš projekt na Startovači
+		rootElementId: 'startovac-canvas',
 		isPatron: null,
 		structure: [
 			'picture',
@@ -32,6 +44,9 @@ const StartovacWidgeticPrivate = class
 			'moneyCollected',
 			'nSupporters',
 		],
+		CSSStyleSheets: [
+			{ href: '/startovac-widgetic.css', integrity: 'sha256-7FQgVDQuvMdPJ4B8WGrq7/z9jjMxdA+x3D22JBnuOjk=' }
+		],
 		resultSnippetElements: {
 			title: 'STRONG',
 			description: 'P',
@@ -39,6 +54,7 @@ const StartovacWidgeticPrivate = class
 			meter: 'METER',
 			percentText: 'P',
 			nSupporters: 'P',
+			moneyCollected: 'P',
 		},
 		resultSnippetBehaviour: {
 			titleIsLink: true,
@@ -60,7 +76,7 @@ const StartovacWidgeticPrivate = class
 			patronDefaultDescription: 'U Patrona podporujete autora a projekt pravidelně. Pročtěte si popis projektu, ať se správně rozhodnete.',
 			support: 'Přispět',
 			pledged: ' vybráno',
-			alreadyContributed: 'Již přispělo ',
+			nSupporters: 'Již přispělo ',
 			backersPlural: ' Startérů',
 			//patronsPlural: ' patronů', // @todo
 		},
@@ -73,13 +89,13 @@ const StartovacWidgeticPrivate = class
 	 * @public
 	 * @type {HTMLElement}
 	 */
-	rootElement = document.getElementById( 'startovac-canvas' );
+	rootElement = HTMLElement;
 
 	/**
 	 * @public
 	 * @type {URL}
 	 */
-	projectURL = new URL( 'https://www.startovac.cz/patron/vedator/json' );
+
 
 	/**
 	* @public
@@ -87,30 +103,118 @@ const StartovacWidgeticPrivate = class
 	*/
 	startovacData = Object;
 
+	async initImportWithIntegrity ( /** @type {Object} */ settings = null )
+	{
+
+		console.groupCollapsed( '%c StartovacWidgeticPrivate %c initImportWithIntegrity %c(' + ( settings === null ? 'without settings' : 'with settings' ) + ')',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME,
+			StartovacWidgetic.CONSOLE.INTEREST_PARAMETER
+		);
+		console.debug( { arguments } );
+		console.groupEnd();
+
+		return new Promise( ( /** @type { Function } */ resolve ) =>
+		{
+			const ip = settings && settings.modulesImportPath ? settings.modulesImportPath : this.settings.modulesImportPath;
+			import( ip + '/importWithIntegrity.mjs' ).then( ( /** @type {Module} */ module ) =>
+			{
+				/** @type {Function} */
+				this.importWithIntegrity = module.importWithIntegrity;
+				resolve( true );
+			} ).catch( () =>
+			{
+				const SKIP_SECURITY_URL = '#skip-security-test-only'
+				if ( window.location.hash === SKIP_SECURITY_URL ) {
+					console.warn( '%c StartovacWidgeticPrivate %c initImportWithIntegrity %c without security!',
+						StartovacWidgetic.CONSOLE.CLASS_NAME,
+						StartovacWidgetic.CONSOLE.METHOD_NAME,
+						StartovacWidgetic.CONSOLE.WARNING
+					);
+					this.importWithIntegrity = (/** @type {String} */ path ) =>
+					{
+						return new Promise( ( /** @type {Function} */ resolve ) =>
+						{
+							import( path ).then( ( /** @type {Module} */ module ) =>
+							{
+								resolve( module );
+							} );
+						} );
+					};
+					resolve( true );
+				} else {
+					throw 'Security Error : Import with integrity module is missing! You can try to skip this error by adding ' + SKIP_SECURITY_URL + ' hash into website URL';
+				}
+			} );
+		} );
+	}
+
+	recountMeterSettingsBy ( /** @type {HTMLMeterElement} */ meter )
+	{
+		const calcProportion = ( /** @type {Number} */ val ) =>
+		{
+			const PERCENTAGE_BASE = 100;
+			let proportion = ( meter.max / PERCENTAGE_BASE ) * val;
+			if ( proportion > meter.max ) {
+				proportion = meter.max;
+			} else if ( proportion < meter.min ) {
+				proportion = meter.min;
+			}
+			return proportion;
+		}
+		const calcPercentage = ( /** @type {Number | String} */ val, /** @type {String | null} */ name = null ) =>
+		{
+			const PERCENT_CHAR = '%';
+			if ( val ) {
+				if ( val.constructor.name === StartovacWidgeticPrivate.TYPE_STRING ) {
+					const d = new RegExp( '\\d+' );
+					val = val.trim();
+					if ( val.substr( val.length - 1 ) === PERCENT_CHAR ) {
+						const num = val.match( d )[ 0 ];
+						if ( num ) {
+							val = calcProportion( Number( num ) );
+						}
+					}
+					val = Number( val );
+				}
+			}
+			if ( name ) {
+				this.settings.resultSnippetBehaviour.meter[ name ] = val;
+			}
+			return val;
+		}
+		const low = calcPercentage( this.settings.resultSnippetBehaviour.meter.low, 'low' );
+		const high = calcPercentage( this.settings.resultSnippetBehaviour.meter.high, 'high' );
+		calcPercentage( this.settings.resultSnippetBehaviour.meter.optimum, 'optimum' );
+		if ( high < low ) {
+			this.settings.resultSnippetBehaviour.meter.high = low;
+		}
+	}
 
 	elCreator = {
 		picture: () =>
 		{
+			const NAME = 'picture';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.picture;
-				if ( el ) {
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag ) {
 
 					/** @type {HTMLImageElement} */
-					let img = ( document.createElement( 'IMG' ) );
+					let img = ( document.createElement( StartovacWidgeticPrivate.IMAGE_NODE_NAME ) );
 
 					img.src = this.startovacData.photo.small_image;
 					img.alt = this.settings.texts.pictureAlt ? this.settings.texts.pictureAlt : this.startovacData.name;
 
-					if ( el === 'PICTURE' ) {
+					if ( tag === StartovacWidgeticPrivate.PICTURE_NODE_NAME ) {
 
 						/** @type {HTMLPictureElement} */
-						const picture = ( document.createElement( 'PICTURE' ) );
+						const picture = ( document.createElement( StartovacWidgeticPrivate.PICTURE_NODE_NAME ) );
 
 						picture.appendChild( img );
 						//@ts-ignore
 						img = picture;
-					} else if ( el === 'FIGURE' ) {
+					} else if ( tag === StartovacWidgeticPrivate.FIGURE_NODE_NAME ) {
 						// @todo
 					}
 
@@ -124,30 +228,31 @@ const StartovacWidgeticPrivate = class
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
 				if ( this.settings.resultSnippetBehaviour.allowLineBreak ) {
-					this.rootElement.appendChild( document.createElement( 'BR' ) );
+					this.rootElement.appendChild( document.createElement( StartovacWidgeticPrivate.BR_NODE_NAME ) );
 				}
 				resolve( true );
 			} );
 		},
 		title: () =>
 		{
+			const NAME = 'title';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.title;
-				if ( el ) {
-					let title = document.createElement( el );
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag ) {
+					let title = document.createElement( tag );
 					title.appendChild( document.createTextNode( this.startovacData.name ) );
 					if ( this.settings.resultSnippetBehaviour.titleIsLink ) {
 
-						/** @type {HTMLLinkElement} */
-						const link = ( document.createElement( 'A' ) );
+						/** @type {HTMLAnchorElement} */
+						const anchor = ( document.createElement( StartovacWidgeticPrivate.HTML_ANCHOR_ELEMENT ) );
 
-						link.href = this.startovacData.urls.startovac_project_url;
+						anchor.href = this.startovacData.urls.startovac_project_url;
 						if ( this.settings.resultSnippetBehaviour.titleInNewTab ) {
-							link.target = '_blank';
+							anchor.target = '_blank';
 						}
-						link.appendChild( title );
-						title = link;
+						anchor.appendChild( title );
+						title = anchor;
 					}
 					this.rootElement.appendChild( title );
 				}
@@ -156,17 +261,18 @@ const StartovacWidgeticPrivate = class
 		},
 		description: () =>
 		{
+			const NAME = 'description';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.description;
-				if ( el ) {
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag ) {
 					let descText = this.startovacData.description;
 					if ( ( !descText && this.settings.isPatron ) || this.settings.resultSnippetBehaviour.useOnlyPatronDefaultDescription ) {
 						descText = this.settings.texts.patronDefaultDescription;
 					}
 
 					if ( descText ) {
-						const description = document.createElement( el );
+						const description = document.createElement( tag );
 						description.appendChild( document.createTextNode( descText ) );
 						this.rootElement.appendChild( description );
 					}
@@ -174,69 +280,29 @@ const StartovacWidgeticPrivate = class
 				resolve( true );
 			} );
 		},
-		recountMeterSettingsBy: ( /** @type {HTMLMeterElement} */ meter ) =>
-		{
-			const calcProportion = ( /** @type {Number} */ val ) =>
-			{
-				const PERCENTAGE_BASE = 100;
-				let proportion = ( meter.max / PERCENTAGE_BASE ) * val;
-				if ( proportion > meter.max ) {
-					proportion = meter.max;
-				} else if ( proportion < meter.min ) {
-					proportion = meter.min;
-				}
-				return proportion;
-			}
-			const calcPercentage = ( /** @type {Number | String} */ val, /** @type {String | null} */ name = null ) =>
-			{
-				const PERCENT_CHAR = '%';
-				if ( val ) {
-					if ( typeof val === 'string' ) {
-						const d = new RegExp( '\\d+' );
-						val = val.trim();
-						if ( val.substr( val.length - 1 ) === PERCENT_CHAR ) {
-							const num = val.match( d )[ 0 ];
-							if ( num ) {
-								val = calcProportion( Number( num ) );
-							}
-						}
-						val = Number( val );
-					}
-				}
-				if ( name ) {
-					this.settings.resultSnippetBehaviour.meter[ name ] = val;
-				}
-				return val;
-			}
-			const low = calcPercentage( this.settings.resultSnippetBehaviour.meter.low, 'low' );
-			const high = calcPercentage( this.settings.resultSnippetBehaviour.meter.high, 'high' );
-			calcPercentage( this.settings.resultSnippetBehaviour.meter.optimum, 'optimum' );
-			if ( high < low ) {
-				this.settings.resultSnippetBehaviour.meter.high = low;
-			}
-		},
 		meter: () =>
 		{
+			const NAME = 'meter';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.meter;
-				if ( el ) {
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag ) {
 
 					/** @type {HTMLMeterElement} */
-					const meter = ( document.createElement( el ) );
+					const meter = ( document.createElement( tag ) );
 
 					meter.min = 0;
 					meter.max = this.startovacData.goal;
 					meter.value = this.startovacData.pledged;
-					this.elCreator.recountMeterSettingsBy( meter );
-					if ( this.settings.resultSnippetBehaviour.meter.low ) {
-						meter.low = this.settings.resultSnippetBehaviour.meter.low;
+					this.recountMeterSettingsBy( meter );
+					if ( this.settings.resultSnippetBehaviour[ NAME ].low ) {
+						meter.low = this.settings.resultSnippetBehaviour[ NAME ].low;
 					}
-					if ( this.settings.resultSnippetBehaviour.meter.high ) {
-						meter.high = this.settings.resultSnippetBehaviour.meter.high;
+					if ( this.settings.resultSnippetBehaviour[ NAME ].high ) {
+						meter.high = this.settings.resultSnippetBehaviour[ NAME ].high;
 					}
-					if ( this.settings.resultSnippetBehaviour.meter.optimum ) {
-						meter.optimum = this.settings.resultSnippetBehaviour.meter.optimum;
+					if ( this.settings.resultSnippetBehaviour[ NAME ].optimum ) {
+						meter.optimum = this.settings.resultSnippetBehaviour[ NAME ].optimum;
 					}
 					//meter.title = this.startovacData.currency_symbol;
 					meter.appendChild( document.createTextNode( this.startovacData.percent_fulfillment + ' %' + this.settings.texts.percentDone ) );
@@ -247,12 +313,13 @@ const StartovacWidgeticPrivate = class
 		},
 		percentText: () =>
 		{
+			const NAME = 'percentText';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.percentText;
-				if ( el ) {
-					const container = document.createElement( el );
-					const span = document.createElement( 'SPAN' );
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag ) {
+					const container = document.createElement( tag );
+					const span = document.createElement( StartovacWidgeticPrivate.SPAN_NODE_NAME );
 					span.appendChild( document.createTextNode( this.startovacData.percent_fulfillment + ' %' ) );
 					container.appendChild( span );
 					container.appendChild( document.createTextNode( this.settings.texts.percentDone ) );
@@ -263,10 +330,11 @@ const StartovacWidgeticPrivate = class
 		},
 		countdownText: () =>
 		{
+			const NAME = 'countdownText';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.countdownText;
-				if ( el && !this.settings.isPatron ) {
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag && !this.settings.isPatron ) {
 					// @todo
 				}
 				resolve( true );
@@ -277,27 +345,28 @@ const StartovacWidgeticPrivate = class
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
 
-				/** @type {HTMLLinkElement} */
-				const link = ( document.createElement( 'A' ) );
+				/** @type {HTMLAnchorElement} */
+				const anchor = ( document.createElement( StartovacWidgeticPrivate.HTML_ANCHOR_ELEMENT ) );
 
-				link.href = this.startovacData.urls.startovac_project_url_pledge;
-				link.rel = 'sponsored';
+				anchor.href = this.startovacData.urls.startovac_project_url_pledge;
+				anchor.rel = 'sponsored';
 				if ( this.settings.resultSnippetBehaviour.supportInNewTab ) {
-					link.target = '_blank';
+					anchor.target = '_blank';
 				}
-				link.appendChild( document.createTextNode( this.settings.texts.support ) );
-				this.rootElement.appendChild( link );
+				anchor.appendChild( document.createTextNode( this.settings.texts.support ) );
+				this.rootElement.appendChild( anchor );
 				resolve( true );
 			} );
 		},
 		moneyCollected: () =>
 		{
+			const NAME = 'moneyCollected';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.percentText;
-				if ( el ) {
-					const container = document.createElement( el );
-					const span = document.createElement( 'SPAN' );
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag ) {
+					const container = document.createElement( tag );
+					const span = document.createElement( StartovacWidgeticPrivate.SPAN_NODE_NAME );
 					let textContent = this.startovacData.pledged ? this.startovacData.pledged : '0';
 					textContent += ' ' + this.startovacData.currency_symbol;
 					span.appendChild( document.createTextNode( textContent ) );
@@ -310,22 +379,23 @@ const StartovacWidgeticPrivate = class
 		},
 		nSupporters: () =>
 		{
+			const NAME = 'nSupporters';
 			return new Promise( ( /** @type {Function} */ resolve ) =>
 			{
-				const el = this.settings.resultSnippetElements.nSupporters;
-				if ( el ) {
-					const container = document.createElement( el );
-					container.appendChild( document.createTextNode( this.settings.texts.alreadyContributed ) );
+				const tag = this.settings.resultSnippetElements[ NAME ];
+				if ( tag ) {
+					const container = document.createElement( tag );
+					container.appendChild( document.createTextNode( this.settings.texts[ NAME ] ) );
 
-					/** @type {HTMLLinkElement} */
-					const link = ( document.createElement( 'A' ) );
+					/** @type {HTMLAnchorElement} */
+					const anchor = ( document.createElement( StartovacWidgeticPrivate.HTML_ANCHOR_ELEMENT ) );
 
 					if ( this.settings.resultSnippetBehaviour.nSupportersInNewTab ) {
-						link.target = '_blank';
+						anchor.target = '_blank';
 					}
-					link.href = this.startovacData.urls.startovac_project_url + this.settings.resultSnippetBehaviour.nSupportersUrlSuffix;
-					link.appendChild( document.createTextNode( this.startovacData.backers_count > this.startovacData.pledge_count ? this.startovacData.backers_count : this.startovacData.pledge_count + this.settings.texts.backersPlural ) );
-					container.appendChild( link );
+					anchor.href = this.startovacData.urls.startovac_project_url + this.settings.resultSnippetBehaviour.nSupportersUrlSuffix;
+					anchor.appendChild( document.createTextNode( this.startovacData.backers_count > this.startovacData.pledge_count ? this.startovacData.backers_count : this.startovacData.pledge_count + this.settings.texts.backersPlural ) );
+					container.appendChild( anchor );
 					this.rootElement.appendChild( container );
 				}
 				resolve( true );
@@ -343,7 +413,7 @@ const StartovacWidgeticPrivate = class
 * @see https://iiic.dev/startovac-widgetic
 * @license https://creativecommons.org/licenses/by-sa/4.0/legalcode.cs CC BY-SA 4.0
 * @since Q1 2020
-* @version 0.4
+* @version 0.5
 */
 export class StartovacWidgetic
 {
@@ -363,31 +433,47 @@ export class StartovacWidgetic
 		data: 'StartovacWidgetic.cachedData',
 	}
 
-	constructor (
-		/** @type {URL | String | null} */ projectURL = null,
-		/** @type {HTMLElement | null} */ rootElement = null,
-		/** @type {Object | null} */ settings = null
-	)
+	/**
+	* @public
+	* @description colors used for browser's console output
+	*/
+	static CONSOLE = {
+		CLASS_NAME: 'color: gray',
+		METHOD_NAME: 'font-weight: normal; color: green',
+		INTEREST_PARAMETER: 'font-weight: normal; font-size: x-small; color: blue',
+		EVENT_TEXT: 'color: orange',
+		WARNING: 'color: red',
+	};
+
+	constructor ( /** @type {HTMLScriptElement | null} */ settingsElement = null )
 	{
+		console.groupCollapsed( '%c StartovacWidgetic',
+			StartovacWidgetic.CONSOLE.CLASS_NAME
+		);
+		console.debug( '%c' + 'constructor',
+			StartovacWidgetic.CONSOLE.METHOD_NAME,
+			[ { arguments } ]
+		);
+
 		this._private = new StartovacWidgeticPrivate;
 
-		if ( projectURL ) {
-			//@ts-ignore
-			this.projectURL = projectURL;
-		}
-		if ( rootElement ) {
-			this.rootElement = rootElement;
-		}
-		if ( settings ) {
-			this.setSettings( settings ).then( () =>
-			{
-				if ( this.settings.autoRun ) {
-					this.run();
-				}
-			} );
-		} else if ( this.settings.autoRun ) {
-			this.run();
-		}
+		/** @type {Object} */
+		const settings = settingsElement ? JSON.parse( settingsElement.text ) : null;
+
+		this._private.initImportWithIntegrity( settings ).then( () =>
+		{
+			if ( settings ) {
+				this.setSettings( settings ).then( () =>
+				{
+					if ( this.settings.autoRun ) {
+						this.run();
+					}
+				} );
+			} else if ( this.settings.autoRun ) {
+				this.run();
+			}
+		} );
+		console.groupEnd();
 	}
 
 
@@ -414,22 +500,13 @@ export class StartovacWidgetic
 		return this._private.settings;
 	}
 
-	// @ts-ignore
-	set projectURL ( /** @type {String | URL} */ url )
-	{
-		if ( typeof url === 'string' ) {
-			url = new URL( url );
-		}
-		this._private.projectURL = url;
-	}
-
 	/**
-	 * @returns {URL}
+	 * @description : Get dynamic Import function
+	 * @returns {Function}
 	 */
-	//@ts-ignore
-	get projectURL ()
+	get importWithIntegrity ()
 	{
-		return this._private.projectURL;
+		return this._private.importWithIntegrity;
 	}
 
 	get elCreator ()
@@ -453,16 +530,24 @@ export class StartovacWidgetic
 
 	async setSettings ( /** @type {Object} */ inObject )
 	{
+		console.groupCollapsed( '%c StartovacWidgetic %c setSettings',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME
+		);
+		console.debug( { arguments } );
+		console.groupEnd();
+
 		return new Promise( ( /** @type {Function} */ resolve ) =>
 		{
 			if ( inObject.modulesImportPath ) {
 				this.settings.modulesImportPath = inObject.modulesImportPath;
 			}
-			// @ts-ignore
-			import( this.settings.modulesImportPath + '/object/deepAssign.mjs' ).then( ( /** @type {Module} */ deepAssign ) =>
+			this.importWithIntegrity(
+				this.settings.modulesImportPath + '/object/deepAssign.mjs',
+				'sha256-qv6PwXwb5wOy4BdBQVGgGUXAdHKXMtY7HELWvcvag34='
+			).then( ( /** @type {Module} */ deepAssign ) =>
 			{
 				new deepAssign.append( Object );
-				// @ts-ignore
 				this._private.settings = Object.deepAssign( this.settings, inObject ); // multi level assign
 				resolve( true );
 			} ).catch( () =>
@@ -475,11 +560,21 @@ export class StartovacWidgetic
 
 	showResult ()
 	{
+		console.debug( '%c StartovacWidgetic %c showResult',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME
+		);
+
 		this.rootElement.hidden = false;
 	}
 
 	async prepareVirtualDom ()
 	{
+		console.debug( '%c StartovacWidgetic %c prepareVirtualDom',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME
+		);
+
 		return new Promise( ( /** @type {Function} */ resolve ) =>
 		{
 			this.settings.structure.forEach( ( /** @type {String} */ method ) =>
@@ -492,13 +587,16 @@ export class StartovacWidgetic
 		} );
 	}
 
-	checkProjectUrl ()
+	constructApiUrls ()
 	{
 		const BASE_JSON = '/json';
 		const POSSIBLE_FORMS = [ BASE_JSON, 'json/' ];
-		const slug = this.projectURL.href.substr( this.projectURL.href.length - BASE_JSON.length );
+		if ( this.settings.projectURL.constructor.name === StartovacWidgeticPrivate.TYPE_STRING ) {
+			this.settings.projectURL = new URL( this.settings.projectURL );
+		}
+		const slug = this.settings.projectURL.href.substr( this.settings.projectURL.href.length - BASE_JSON.length );
 		if ( !POSSIBLE_FORMS.includes( slug ) ) {
-			this.projectURL.href += BASE_JSON;
+			this.settings.projectURL.href += BASE_JSON;
 		}
 	}
 
@@ -506,13 +604,13 @@ export class StartovacWidgetic
 	{
 		const PATRON_IDENT_SUBSTRING = '/patron/';
 		if ( this.settings.isPatron === null ) {
-			this.settings.isPatron = this.projectURL.href.includes( PATRON_IDENT_SUBSTRING );
+			this.settings.isPatron = this.settings.projectURL.href.includes( PATRON_IDENT_SUBSTRING );
 		}
 	}
 
 	checkReturnedData ()
 	{
-		if ( typeof this.startovacData !== 'object' ) {
+		if ( this.startovacData.constructor.name !== StartovacWidgeticPrivate.TYPE_OBJECT ) {
 			throw 'Fetching data from Startovač failed';
 		}
 	}
@@ -538,7 +636,14 @@ export class StartovacWidgetic
 				return true;
 			}
 
-			fetch( this.projectURL.href, { cache: 'no-cache' } ).then( ( /** @type {Response} */ response ) =>
+			fetch( this.settings.projectURL.href, {
+				method: 'GET',
+				credentials: 'omit',
+				cache: 'no-cache',
+				referrerPolicy: 'no-referrer',
+				redirect: 'follow',
+				mode: 'cors'
+			} ).then( ( /** @type {Response} */ response ) =>
 			{
 				if ( response.ok ) {
 					return response.text();
@@ -554,9 +659,100 @@ export class StartovacWidgetic
 		} );
 	}
 
+	async addCSSStyleSheets ()
+	{
+		console.debug( '%c StartovacWidgetic %c addCSSStyleSheets',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME
+		);
+
+		return new Promise( ( /** @type {Function} */ resolve ) =>
+		{
+			const usedStyleSheets = new Set();
+			[ ...document.styleSheets ].forEach( ( /** @type {CSSStyleSheet} */ css ) =>
+			{
+				if ( css.disabled === false ) {
+					usedStyleSheets.add( css.href );
+				}
+			} );
+			this.settings.CSSStyleSheets.forEach( ( /** @type {Object} */ assignment ) =>
+			{
+				let url = URL;
+				if ( assignment.href.startsWith( 'https://', 0 ) || assignment.href.startsWith( 'http://', 0 ) ) {
+					url = new URL( assignment.href );
+				} else {
+					url = new URL( assignment.href, window.location.protocol + '//' + window.location.hostname );
+				}
+				if ( !usedStyleSheets.has( url.href ) ) {
+					fetch( url.href, {
+						method: 'HEAD',
+						credentials: 'omit',
+						cache: 'force-cache',
+						referrerPolicy: 'no-referrer',
+						redirect: 'manual',
+						mode: 'cors'
+					} ).then( ( /** @type {Response} */ response ) =>
+					{
+						if ( response.ok ) {
+							return true;
+						} else {
+							throw 'error';
+						}
+					} ).then( () =>
+					{
+						/** @type {HTMLLinkElement} */
+						const link = document.createElement( StartovacWidgeticPrivate.LINK_NODE_NAME );
+
+						link.href = url.href;
+						link.rel = 'stylesheet';
+						link.setAttribute( 'crossorigin', 'anonymous' );
+						if ( assignment.integrity ) {
+							link.integrity = assignment.integrity;
+						}
+						document.head.appendChild( link );
+					} ).catch( () =>
+					{
+						resolve( false );
+					} );
+				}
+			} );
+			resolve( true );
+		} );
+	}
+
+	initRootElement ()
+	{
+		console.debug( '%c StartovacWidgetic %c initRootElement',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME
+		);
+
+		this.rootElement = document.getElementById( this.settings.rootElementId );
+	}
+
+	checkRequirements ()
+	{
+		console.debug( '%c StartovacWidgetic %c checkRequirements',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME
+		);
+
+		if ( !this.settings.projectURL ) {
+			throw new Error( 'Project URL on Startovač server is missing.' );
+		}
+	}
+
 	run ()
 	{
-		this.checkProjectUrl();
+		console.groupCollapsed( '%c StartovacWidgetic %c run',
+			StartovacWidgetic.CONSOLE.CLASS_NAME,
+			StartovacWidgetic.CONSOLE.METHOD_NAME
+		);
+
+		this.checkRequirements();
+		this.addCSSStyleSheets();
+		this.initRootElement();
+		this.constructApiUrls();
 		this.fetchFromAPI().then( () =>
 		{
 			this.checkReturnedData();
@@ -565,6 +761,10 @@ export class StartovacWidgetic
 			this.showResult();
 		} );
 
+		console.groupEnd();
+
 		return true;
 	}
 };
+
+new StartovacWidgetic( document.getElementById( 'startovac-widgetic-settings' ) );

@@ -24,8 +24,7 @@
 
 #startovac-canvas meter {
 	width: 100%;
-	height: 1.5em;
-	outline: 1px solid #e0e0e0;
+	height: 2em;
 }
 
 #startovac-canvas meter::-webkit-meter-optimum-value,

@@ -1,4 +1,4 @@
-# StartovacWidgetic v 0.4
+# StartovacWidgetic v 0.5
 Widget pro zobrazení Startovač projektu na vlastním webu
 
 V podstatě obdoba takového okénka od Startovače https://www.startovac.cz/novinky/detail/1222/ jen bez toho iframe, document.write() a dalších nepěkných věcí.
@@ -7,28 +7,31 @@ vypadat může třeba takto:
 
 ![Ukazka](https://iiic.dev/images/startovac-widgetic-snapshot.png)
 
+# Co je nového ve verzi 0.5 ?
+- Nastavení se prování přes json
+- V ukázkovém stylu opraven nepěkný rámeček kolem meter elementu
+
 # Jak na to?
 
 Potřebný je tu jediný soubor a to `startovacWidgetic.mjs`. Ten vložit do stránky a spustit takto nějak:
 
 ``` html
-	<div id="startovac-canvas" hidden></div>
-	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-q73cHpbcf4e0R62wubmMCMLnjEpumk/09G1aTxFuRxs="></script>
-	<script type="module">
-		import { StartovacWidgetic } from '/startovacWidgetic.mjs';
-		const projectURL = new URL( 'https://www.startovac.cz/patron/vedator/' ); // váš projekt na Startovači
-		const sandboxElement = document.getElementById('startovac-canvas'); // kam se to vykreslí
-		new StartovacWidgetic( projectURL, sandboxElement );
-	</script>
+<div id="startovac-canvas" hidden></div>
+<script type="text/json" id="startovac-widgetic-settings">
+	{
+		"projectURL": "https://www.startovac.cz/patron/vedator/",
+		"clientCacheFor": 0,
+		"modulesImportPath": "/modules"
+	}
+</script>
+<script type="module" src="/startovacWidgetic.mjs?v=0.5" crossorigin="anonymous" integrity="sha256-gFCc1/meoiIgkAxv5p0W9q4hYLgWxHXBm6kRDg4bbEs="></script>
 ```
 
-Není celý kód `	<script type="module" src="/startovacWidgetic.mjs" crossorigin="anonymous" integrity="sha256-q73cHpbcf4e0R62wubmMCMLnjEpumk/09G1aTxFuRxs="></script>` zbytečný, fungovalo by to i bez něj. Jops, fungovalo, ale nešlo by bez něj zajistit kontrolu integrity javascriptového modulu. Bezpečnost je důležitá, pokud vás zajímá o bezpečnosti modulů více, čtěte zde: https://iiic.dev/subresource-integrity-check-u-javascriptovych-modulu
-
-minimalistický příklad použití s nastavením je v souboru `example-usage.html` a příklad jak by mohly vypadat styly v souboru `example.css`.
+minimalistický příklad použití s nastavením je v souboru `example-usage.html` a příklad jak by mohly vypadat styly v souboru `startovac-widgetic.css`.
 
 # Nastavení
 
-Je možné provést 3. parametrem konstruktoru.
+Je možné provést `json`em vloženým do stránky pomocí elementu `script` s atributem `type="text/json"` (to je důležité, `script` se pak nebude chovat jako script ale prostý text, například neblokuje načítání stránky) a identifikovaný atributem `id` konkrétně `id="startovac-widgetic-settings"`. Zajímat vás bude především parametr `"projectURL"` do kterého vložíte odkaz na svůj projekt na Startovači.
 
 # Možné problémy?
 
